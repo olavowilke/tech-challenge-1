@@ -34,6 +34,16 @@ springdoc:
     operations-sorter: method
     tags-sorter: alpha
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+
 app:
   jwt:
     secret: ${JWT_SECRET:ZmljYXAtb2ZpY2luYS1hcGktc2VjcmV0LWtleS1tdXN0LWJlLWF0LWxlYXN0LTI1Ni1iaXRzLWxvbmch}
