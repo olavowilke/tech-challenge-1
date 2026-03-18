@@ -1,0 +1,44 @@
+services:
+  app:
+    build: .
+    container_name: oficina-api
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      DB_URL: jdbc:postgresql://db:5432/oficina_db
+      DB_USERNAME: oficina
+      DB_PASSWORD: oficina
+      JWT_SECRET: ZmljYXAtb2ZpY2luYS1hcGktc2VjcmV0LWtleS1tdXN0LWJlLWF0LWxlYXN0LTI1Ni1iaXRzLWxvbmch
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - oficina-network
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    container_name: oficina-db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: oficina_db
+      POSTGRES_USER: oficina
+      POSTGRES_PASSWORD: oficina
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U oficina -d oficina_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - oficina-network
+
+volumes:
+  postgres_data:
+
+networks:
+  oficina-network:
+    driver: bridge
