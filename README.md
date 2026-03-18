@@ -1,8 +1,6 @@
 # Oficina API
 
 [![Build Status](https://github.com/olavowilke/tech-challenge-1/actions/workflows/ci.yml/badge.svg)](https://github.com/olavowilke/tech-challenge-1/actions/workflows/ci.yml)
-[![Coverage](.github/badges/jacoco.svg)](https://github.com/olavowilke/tech-challenge-1/actions/workflows/ci.yml)
-
 
 Sistema Integrado de Atendimento e Execução de Serviços para oficina mecânica.
 MVP back-end desenvolvido como Tech Challenge da pós-graduação FIAP PosTech.
