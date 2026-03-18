@@ -21,7 +21,9 @@ public class SecurityConfig {
             "/swagger-ui.html",
             "/auth/**",
             "/clientes/**",
-            "/veiculos/**"
+            "/veiculos/**",
+            "/servicos/**",
+            "/pecas/**"
     };
 
     @Bean
