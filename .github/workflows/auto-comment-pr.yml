@@ -20,3 +20,5 @@ jobs:
               issue_number: context.payload.pull_request.number,
               body: '@claude review this PR for breaking issues'
             });
+        env:
+          GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
