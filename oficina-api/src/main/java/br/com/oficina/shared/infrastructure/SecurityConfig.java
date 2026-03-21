@@ -23,7 +23,9 @@ public class SecurityConfig {
             "/clientes/**",
             "/veiculos/**",
             "/servicos/**",
-            "/pecas/**"
+            "/pecas/**",
+            "/ordens-servico/**",
+            "/public/**"
     };
 
     @Bean
