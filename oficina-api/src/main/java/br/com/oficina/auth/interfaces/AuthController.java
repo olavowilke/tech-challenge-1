@@ -3,6 +3,13 @@ package br.com.oficina.auth.interfaces;
 import br.com.oficina.auth.application.AuthService;
 import br.com.oficina.auth.application.RegisterCommand;
 import br.com.oficina.auth.domain.Usuario;
+import br.com.oficina.shared.domain.ApiError;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,7 +22,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/auth")
-@Tag(name = "Autenticação")
+@Tag(name = "Autenticação", description = "Registro e login de usuários")
+@SecurityRequirements
 public class AuthController {
 
     private final AuthService authService;
@@ -27,6 +35,15 @@ public class AuthController {
         this.expirationMs = expirationMs;
     }
 
+    @Operation(summary = "Registrar usuário", description = "Cria um novo usuário (ADMIN ou MECANICO)")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Usuário criado com sucesso",
+                    content = @Content(schema = @Schema(implementation = UsuarioResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Username já em uso",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "422", description = "Dados inválidos",
+                    content = @Content(schema = @Schema(implementation = ApiError.class)))
+    })
     @PostMapping("/register")
     public ResponseEntity<UsuarioResponse> register(@Valid @RequestBody RegisterRequest request) {
         RegisterCommand command = new RegisterCommand(request.username(), request.password(), request.role());
@@ -34,6 +51,15 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED).body(UsuarioResponse.from(usuario));
     }
 
+    @Operation(summary = "Login", description = "Autentica o usuário e retorna um token JWT")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Login realizado com sucesso",
+                    content = @Content(schema = @Schema(implementation = AuthResponse.class))),
+            @ApiResponse(responseCode = "401", description = "Credenciais inválidas",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "422", description = "Dados inválidos",
+                    content = @Content(schema = @Schema(implementation = ApiError.class)))
+    })
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         String token = authService.login(request.username(), request.password());
