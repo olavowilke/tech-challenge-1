@@ -19,3 +19,9 @@ application-local.yml
 
 *.log
 logs/
+
+design-docs/
+
+*.mcp*
+*.claude
+*.idea
