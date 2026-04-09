@@ -9,6 +9,7 @@ public interface ClienteRepository {
     Optional<Cliente> findByDocumento(String numero);
     boolean existsByDocumento(String numero);
     List<Cliente> findAll();
+    List<Cliente> findAllAtivos();
     Cliente save(Cliente cliente);
     void deleteById(UUID id);
     boolean existsById(UUID id);

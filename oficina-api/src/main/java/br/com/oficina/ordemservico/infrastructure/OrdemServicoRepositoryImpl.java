@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalDouble;
 import java.util.UUID;
 
 @Repository
@@ -42,5 +43,11 @@ public class OrdemServicoRepositoryImpl implements OrdemServicoRepository {
     @Override
     public List<OrdemServico> findByStatus(StatusOS status) {
         return jpaRepository.findByStatus(status).stream().map(OrdemServicoMapper::toDomain).toList();
+    }
+
+    @Override
+    public OptionalDouble tempoMedioExecucaoMinutos() {
+        Double media = jpaRepository.findAverageExecutionMinutes();
+        return media == null ? OptionalDouble.empty() : OptionalDouble.of(media);
     }
 }

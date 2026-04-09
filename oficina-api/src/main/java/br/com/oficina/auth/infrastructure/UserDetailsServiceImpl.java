@@ -27,6 +27,10 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         return new User(
                 usuario.getUsername(),
                 usuario.getPasswordHash(),
+                usuario.isAtivo(),
+                true,
+                true,
+                true,
                 List.of(new SimpleGrantedAuthority("ROLE_" + usuario.getRole().name()))
         );
     }

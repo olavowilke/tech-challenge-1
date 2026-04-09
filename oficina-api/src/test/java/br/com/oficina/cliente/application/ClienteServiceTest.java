@@ -113,13 +113,14 @@ class ClienteServiceTest {
     }
 
     @Test
-    void shouldReturnAllClientesOnListar() {
+    void listarDeveRetornarApenasClientesAtivos() {
         Cliente c1 = buildCliente();
-        when(clienteRepository.findAll()).thenReturn(List.of(c1));
+        when(clienteRepository.findAllAtivos()).thenReturn(List.of(c1));
 
         List<Cliente> result = clienteService.listar();
 
         assertEquals(1, result.size());
-        verify(clienteRepository).findAll();
+        verify(clienteRepository).findAllAtivos();
+        verify(clienteRepository, never()).findAll();
     }
 }

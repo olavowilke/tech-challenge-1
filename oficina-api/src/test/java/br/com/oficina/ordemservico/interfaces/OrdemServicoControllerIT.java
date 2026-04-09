@@ -150,10 +150,12 @@ class OrdemServicoControllerIT extends BaseControllerIT {
     @Test
     void shouldReturn200WhenConsultingPublicStatusWithoutToken() {
         OrdemServicoResponse os = criarOS();
-        ResponseEntity<OrdemServicoResponse> response = restTemplate.getForEntity(
-                "/public/ordens-servico/" + os.id() + "/status", OrdemServicoResponse.class);
+        ResponseEntity<OrdemServicoStatusResponse> response = restTemplate.getForEntity(
+                "/public/ordens-servico/" + os.id() + "/status", OrdemServicoStatusResponse.class);
         assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
         assertEquals(os.id(), response.getBody().id());
+        assertEquals(os.status(), response.getBody().status());
     }
 
     @Test

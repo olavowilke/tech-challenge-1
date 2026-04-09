@@ -1,36 +1,50 @@
 package br.com.oficina.ordemservico.application;
 
+import br.com.oficina.cliente.domain.ClienteRepository;
 import br.com.oficina.ordemservico.domain.*;
 import br.com.oficina.peca.domain.Peca;
 import br.com.oficina.peca.domain.PecaRepository;
 import br.com.oficina.servico.domain.Servico;
 import br.com.oficina.servico.domain.ServicoRepository;
 import br.com.oficina.shared.domain.RecursoNaoEncontradoException;
+import br.com.oficina.veiculo.domain.VeiculoRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Duration;
 import java.util.List;
 import java.util.OptionalDouble;
 import java.util.UUID;
 
 @Service
+@Transactional(readOnly = true)
 public class OrdemServicoService {
 
     private final OrdemServicoRepository ordemServicoRepository;
     private final ServicoRepository servicoRepository;
     private final PecaRepository pecaRepository;
+    private final ClienteRepository clienteRepository;
+    private final VeiculoRepository veiculoRepository;
 
     public OrdemServicoService(OrdemServicoRepository ordemServicoRepository,
                                ServicoRepository servicoRepository,
-                               PecaRepository pecaRepository) {
+                               PecaRepository pecaRepository,
+                               ClienteRepository clienteRepository,
+                               VeiculoRepository veiculoRepository) {
         this.ordemServicoRepository = ordemServicoRepository;
         this.servicoRepository = servicoRepository;
         this.pecaRepository = pecaRepository;
+        this.clienteRepository = clienteRepository;
+        this.veiculoRepository = veiculoRepository;
     }
 
     @Transactional
     public OrdemServico criar(CriarOrdemServicoCommand command) {
+        if (!clienteRepository.existsById(command.clienteId())) {
+            throw new RecursoNaoEncontradoException("Cliente", command.clienteId());
+        }
+        if (!veiculoRepository.existsById(command.veiculoId())) {
+            throw new RecursoNaoEncontradoException("Veículo", command.veiculoId());
+        }
         OrdemServico os = OrdemServico.nova(command.clienteId(), command.veiculoId(), command.observacoes());
         return ordemServicoRepository.save(os);
     }
@@ -117,10 +131,7 @@ public class OrdemServicoService {
     }
 
     public OptionalDouble monitorarTempoMedioExecucao() {
-        return ordemServicoRepository.findByStatus(StatusOS.FINALIZADA).stream()
-                .filter(os -> os.getInicioExecucao() != null && os.getFimExecucao() != null)
-                .mapToLong(os -> Duration.between(os.getInicioExecucao(), os.getFimExecucao()).toMinutes())
-                .average();
+        return ordemServicoRepository.tempoMedioExecucaoMinutos();
     }
 
     private OrdemServico buscarOuLancar(UUID id) {

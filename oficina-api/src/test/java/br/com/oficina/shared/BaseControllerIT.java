@@ -54,7 +54,13 @@ public abstract class BaseControllerIT {
         LoginRequest loginRequest = new LoginRequest("admin", "admin123");
         ResponseEntity<AuthResponse> response = restTemplate.postForEntity(
                 "/auth/login", loginRequest, AuthResponse.class);
-        return response.getBody().token();
+        AuthResponse body = response.getBody();
+        if (body == null) {
+            throw new IllegalStateException(
+                    "Admin login falhou — status " + response.getStatusCode() +
+                    ". Verifique se AdminInitializer rodou.");
+        }
+        return body.token();
     }
 
     protected HttpHeaders authHeaders() {

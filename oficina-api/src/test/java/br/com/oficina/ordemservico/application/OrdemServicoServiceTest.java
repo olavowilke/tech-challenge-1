@@ -1,5 +1,6 @@
 package br.com.oficina.ordemservico.application;
 
+import br.com.oficina.cliente.domain.ClienteRepository;
 import br.com.oficina.ordemservico.domain.OrdemServico;
 import br.com.oficina.ordemservico.domain.OrdemServicoRepository;
 import br.com.oficina.ordemservico.domain.StatusOS;
@@ -8,6 +9,7 @@ import br.com.oficina.peca.domain.PecaRepository;
 import br.com.oficina.servico.domain.Servico;
 import br.com.oficina.servico.domain.ServicoRepository;
 import br.com.oficina.shared.domain.RecursoNaoEncontradoException;
+import br.com.oficina.veiculo.domain.VeiculoRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,6 +37,12 @@ class OrdemServicoServiceTest {
     @Mock
     private PecaRepository pecaRepository;
 
+    @Mock
+    private ClienteRepository clienteRepository;
+
+    @Mock
+    private VeiculoRepository veiculoRepository;
+
     @InjectMocks
     private OrdemServicoService service;
 
@@ -50,6 +58,8 @@ class OrdemServicoServiceTest {
     @Test
     void deveCriarOrdemServico() {
         CriarOrdemServicoCommand command = new CriarOrdemServicoCommand(clienteId, veiculoId, "Revisão");
+        when(clienteRepository.existsById(clienteId)).thenReturn(true);
+        when(veiculoRepository.existsById(veiculoId)).thenReturn(true);
         when(ordemServicoRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         OrdemServico os = service.criar(command);
@@ -58,6 +68,29 @@ class OrdemServicoServiceTest {
         assertThat(os.getStatus()).isEqualTo(StatusOS.RECEBIDA);
         assertThat(os.getClienteId()).isEqualTo(clienteId);
         verify(ordemServicoRepository).save(any());
+    }
+
+    @Test
+    void deveLancarExcecaoAoCriarOSComClienteInexistente() {
+        CriarOrdemServicoCommand command = new CriarOrdemServicoCommand(clienteId, veiculoId, "Revisão");
+        when(clienteRepository.existsById(clienteId)).thenReturn(false);
+
+        assertThatThrownBy(() -> service.criar(command))
+                .isInstanceOf(RecursoNaoEncontradoException.class)
+                .hasMessageContaining("Cliente");
+        verify(ordemServicoRepository, never()).save(any());
+    }
+
+    @Test
+    void deveLancarExcecaoAoCriarOSComVeiculoInexistente() {
+        CriarOrdemServicoCommand command = new CriarOrdemServicoCommand(clienteId, veiculoId, "Revisão");
+        when(clienteRepository.existsById(clienteId)).thenReturn(true);
+        when(veiculoRepository.existsById(veiculoId)).thenReturn(false);
+
+        assertThatThrownBy(() -> service.criar(command))
+                .isInstanceOf(RecursoNaoEncontradoException.class)
+                .hasMessageContaining("Veículo");
+        verify(ordemServicoRepository, never()).save(any());
     }
 
     @Test

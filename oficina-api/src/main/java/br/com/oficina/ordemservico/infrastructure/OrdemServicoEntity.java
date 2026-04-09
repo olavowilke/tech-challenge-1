@@ -34,10 +34,10 @@ public class OrdemServicoEntity {
     @Column(columnDefinition = "TEXT")
     private String observacoes;
 
-    @OneToMany(mappedBy = "ordemServico", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "ordemServico", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<ItemServicoEntity> itensServico = new ArrayList<>();
 
-    @OneToMany(mappedBy = "ordemServico", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "ordemServico", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<ItemPecaEntity> itensPeca = new ArrayList<>();
 
     @Column(name = "criado_em", nullable = false)

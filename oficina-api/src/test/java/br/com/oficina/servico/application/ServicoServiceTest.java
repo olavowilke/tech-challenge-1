@@ -84,13 +84,14 @@ class ServicoServiceTest {
     }
 
     @Test
-    void listarShouldReturnAll() {
+    void listarDeveRetornarApenasServicosAtivos() {
         Servico s1 = buildServico();
-        when(servicoRepository.findAll()).thenReturn(List.of(s1));
+        when(servicoRepository.findAllAtivos()).thenReturn(List.of(s1));
 
         List<Servico> result = servicoService.listar();
 
         assertEquals(1, result.size());
-        verify(servicoRepository).findAll();
+        verify(servicoRepository).findAllAtivos();
+        verify(servicoRepository, never()).findAll();
     }
 }
