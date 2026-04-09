@@ -2,27 +2,31 @@ package br.com.oficina.shared;
 
 import br.com.oficina.auth.interfaces.AuthResponse;
 import br.com.oficina.auth.interfaces.LoginRequest;
+import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.*;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Testcontainers
 @ActiveProfiles("test")
 public abstract class BaseControllerIT {
 
-    @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine")
+    // Singleton container: started once for the JVM and reused across all IT classes,
+    // so Spring's cached ApplicationContext keeps pointing at a live database.
+    static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine")
             .withDatabaseName("oficina_test")
             .withUsername("oficina")
             .withPassword("oficina");
+
+    static {
+        postgres.start();
+    }
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
@@ -33,6 +37,18 @@ public abstract class BaseControllerIT {
 
     @Autowired
     protected TestRestTemplate restTemplate;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    @BeforeEach
+    void cleanDatabase() {
+        // Singleton container is reused across all IT classes, so we must reset
+        // state between tests to avoid unique-constraint collisions and stale rows.
+        jdbcTemplate.execute("TRUNCATE TABLE itens_peca, itens_servico, ordens_servico, " +
+                "veiculos, clientes, pecas, servicos RESTART IDENTITY CASCADE");
+        jdbcTemplate.execute("DELETE FROM usuarios WHERE username <> 'admin'");
+    }
 
     protected String getAdminToken() {
         LoginRequest loginRequest = new LoginRequest("admin", "admin123");
