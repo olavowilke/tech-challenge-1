@@ -52,6 +52,12 @@ br.com.oficina/
 
 ## Rodando localmente
 
+### 0. Entre no diretório do projeto
+
+```bash
+cd oficina-api
+```
+
 ### 1. Subir apenas o banco de dados
 
 ```bash
@@ -99,13 +105,54 @@ Com a aplicação rodando, acesse:
 
 ---
 
+## Autenticação
+
+Todas as rotas administrativas exigem **JWT** (`Authorization: Bearer <token>`). As exceções (públicas) são:
+`/auth/**`, `/public/**`, `/health`, `/actuator/health`, `/swagger-ui/**`, `/v3/api-docs/**`.
+
+### Usuário admin padrão
+
+Na primeira execução, um usuário `ADMIN` é criado automaticamente via `AdminInitializer`:
+
+| Credencial | Valor padrão | Variável de ambiente |
+|---|---|---|
+| Username | `admin` | `ADMIN_USERNAME` |
+| Password | `admin123` | `ADMIN_PASSWORD` |
+
+> Em produção, **sempre** sobrescreva `ADMIN_USERNAME` / `ADMIN_PASSWORD` e `JWT_SECRET` via variáveis de ambiente.
+
+### Obtendo um token
+
+```bash
+curl -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"admin123"}'
+```
+
+A resposta contém `token`. Use-o nas rotas protegidas:
+
+```bash
+curl http://localhost:8080/api/clientes \
+  -H "Authorization: Bearer <token>"
+```
+
+---
+
 ## Endpoints principais
+
+> Base path: `/api` · Documentação interativa: **Swagger UI**. A tabela abaixo é um resumo; consulte o Swagger para schemas e exemplos.
+
+### Auth (público)
+| Método | Endpoint | Descrição |
+|---|---|---|
+| `POST` | `/api/auth/login` | Autenticar e retornar JWT |
+| `POST` | `/api/auth/register` | Registrar novo usuário (role `MECANICO`) |
 
 ### Clientes
 | Método | Endpoint | Descrição |
 |---|---|---|
 | `POST` | `/api/clientes` | Cadastrar cliente (CPF ou CNPJ) |
-| `GET` | `/api/clientes` | Listar clientes |
+| `GET` | `/api/clientes` | Listar clientes ativos |
 | `GET` | `/api/clientes/{id}` | Buscar cliente por ID |
 | `PUT` | `/api/clientes/{id}` | Atualizar cliente |
 | `DELETE` | `/api/clientes/{id}` | Desativar cliente (soft delete) |
@@ -114,15 +161,54 @@ Com a aplicação rodando, acesse:
 | Método | Endpoint | Descrição |
 |---|---|---|
 | `POST` | `/api/veiculos` | Cadastrar veículo |
-| `GET` | `/api/veiculos/cliente/{clienteId}` | Listar veículos por cliente |
+| `GET` | `/api/veiculos/cliente/{clienteId}` | Listar veículos de um cliente |
 | `GET` | `/api/veiculos/{id}` | Buscar veículo por ID |
 | `PUT` | `/api/veiculos/{id}` | Atualizar veículo |
 | `DELETE` | `/api/veiculos/{id}` | Remover veículo |
 
-### Health
+### Serviços (catálogo)
 | Método | Endpoint | Descrição |
 |---|---|---|
-| `GET` | `/api/health` | Status da aplicação |
+| `POST` | `/api/servicos` | Cadastrar serviço no catálogo |
+| `GET` | `/api/servicos` | Listar serviços ativos |
+| `GET` | `/api/servicos/{id}` | Buscar serviço por ID |
+| `PUT` | `/api/servicos/{id}` | Atualizar serviço |
+| `DELETE` | `/api/servicos/{id}` | Desativar serviço (soft delete) |
+
+### Peças e Insumos
+| Método | Endpoint | Descrição |
+|---|---|---|
+| `POST` | `/api/pecas` | Cadastrar peça |
+| `GET` | `/api/pecas` | Listar peças ativas |
+| `GET` | `/api/pecas/{id}` | Buscar peça por ID |
+| `PUT` | `/api/pecas/{id}` | Atualizar peça |
+| `PATCH` | `/api/pecas/{id}/estoque` | Ajustar estoque (positivo entra, negativo sai) |
+| `DELETE` | `/api/pecas/{id}` | Desativar peça (soft delete) |
+
+### Ordens de Serviço
+| Método | Endpoint | Descrição |
+|---|---|---|
+| `POST` | `/api/ordens-servico` | Criar OS (vincula cliente e veículo) |
+| `GET` | `/api/ordens-servico` | Listar OSs (filtros por `clienteId`/`status`) |
+| `GET` | `/api/ordens-servico/{id}` | Buscar OS por ID |
+| `POST` | `/api/ordens-servico/{id}/servicos` | Adicionar item de serviço à OS |
+| `DELETE` | `/api/ordens-servico/{id}/servicos/{itemServicoId}` | Remover item de serviço |
+| `POST` | `/api/ordens-servico/{id}/pecas` | Adicionar peça (reserva estoque) |
+| `DELETE` | `/api/ordens-servico/{id}/pecas/{itemPecaId}` | Remover peça (devolve estoque) |
+| `PATCH` | `/api/ordens-servico/{id}/status` | Avançar status (máquina de estados) |
+| `POST` | `/api/ordens-servico/{id}/aprovar-orcamento` | Aprovar orçamento (→ `EM_EXECUCAO`) |
+| `POST` | `/api/ordens-servico/{id}/recusar-orcamento` | Recusar orçamento (→ `CANCELADA`) |
+| `GET` | `/api/ordens-servico/monitoramento/tempo-medio-execucao` | Tempo médio de execução (min) |
+
+### Consulta pública (para o cliente final)
+| Método | Endpoint | Descrição |
+|---|---|---|
+| `GET` | `/api/public/ordens-servico/{id}/status` | Consultar status da OS sem autenticação |
+
+### Operacional
+| Método | Endpoint | Descrição |
+|---|---|---|
+| `GET` | `/api/health` | Status simples da aplicação |
 | `GET` | `/api/actuator/health` | Health detalhado (DB, disco) |
 
 ---
@@ -151,3 +237,14 @@ O relatório de cobertura JaCoCo é gerado em: `target/site/jacoco/index.html`
 - Suporte completo a transações ACID
 - Compatibilidade com Flyway e Hibernate/JPA
 - Open source com ampla adoção na indústria
+
+---
+
+## Documentação complementar
+
+| Documento | Conteúdo |
+|---|---|
+| [`design-docs/PLANEJAMENTO.md`](design-docs/PLANEJAMENTO.md) | Visão geral da arquitetura e etapas de implementação |
+| [`design-docs/TESTES.md`](design-docs/TESTES.md) | Estratégia de testes e cobertura |
+| [`design-docs/vulnerabilidades.md`](design-docs/vulnerabilidades.md) | Relatório OWASP Dependency-Check (Etapa 8) |
+| [Board Miro — Documentação DDD](https://miro.com/app/board/uXjVOXA0ID4=/) | Event Storming, Context Map, Agregados e Linguagem Ubíqua |
