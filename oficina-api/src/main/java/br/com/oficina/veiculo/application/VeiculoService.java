@@ -6,11 +6,13 @@ import br.com.oficina.veiculo.domain.Placa;
 import br.com.oficina.veiculo.domain.Veiculo;
 import br.com.oficina.veiculo.domain.VeiculoRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
 
 @Service
+@Transactional(readOnly = true)
 public class VeiculoService {
 
     private final VeiculoRepository veiculoRepository;
@@ -21,19 +23,21 @@ public class VeiculoService {
         this.clienteRepository = clienteRepository;
     }
 
+    @Transactional
     public Veiculo cadastrar(CadastrarVeiculoCommand command) {
         if (!clienteRepository.existsById(command.clienteId())) {
             throw new RecursoNaoEncontradoException("Cliente", command.clienteId());
         }
-        if (veiculoRepository.existsByPlaca(command.placa())) {
+        Placa placa = new Placa(command.placa());
+        if (veiculoRepository.existsByPlaca(placa.valor())) {
             throw new IllegalArgumentException("Já existe um veículo com a placa informada");
         }
-        Placa placa = new Placa(command.placa());
         Veiculo veiculo = Veiculo.novo(command.clienteId(), placa, command.marca(),
                 command.modelo(), command.ano(), command.cor());
         return veiculoRepository.save(veiculo);
     }
 
+    @Transactional
     public Veiculo atualizar(UUID id, AtualizarVeiculoCommand command) {
         Veiculo veiculo = veiculoRepository.findById(id)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Veículo", id));
@@ -53,6 +57,7 @@ public class VeiculoService {
         return veiculoRepository.findByClienteId(clienteId);
     }
 
+    @Transactional
     public void remover(UUID id) {
         if (!veiculoRepository.existsById(id)) {
             throw new RecursoNaoEncontradoException("Veículo", id);

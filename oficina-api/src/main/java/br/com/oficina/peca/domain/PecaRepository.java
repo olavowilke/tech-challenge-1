@@ -7,6 +7,7 @@ import java.util.UUID;
 public interface PecaRepository {
     Optional<Peca> findById(UUID id);
     List<Peca> findAll();
+    List<Peca> findAllAtivos();
     Peca save(Peca peca);
     boolean existsById(UUID id);
 }

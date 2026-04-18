@@ -2,9 +2,13 @@ package br.com.oficina.ordemservico.domain;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalDouble;
 import java.util.UUID;
 
 public interface OrdemServicoRepository {
+
+    OptionalDouble tempoMedioExecucaoMinutos();
+
 
     OrdemServico save(OrdemServico ordemServico);
 

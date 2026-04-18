@@ -48,7 +48,9 @@ class VeiculoServiceTest {
         CadastrarVeiculoCommand command = new CadastrarVeiculoCommand(
                 clienteId, "ABC-1234", "Toyota", "Corolla", 2020, "Prata");
         when(clienteRepository.existsById(clienteId)).thenReturn(true);
-        when(veiculoRepository.existsByPlaca("ABC-1234")).thenReturn(false);
+        // VeiculoService normalizes the plate (strips hyphens, uppercases) BEFORE
+        // calling existsByPlaca, so the stub must match the normalized value.
+        when(veiculoRepository.existsByPlaca("ABC1234")).thenReturn(false);
         when(veiculoRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         Veiculo result = veiculoService.cadastrar(command);
@@ -74,7 +76,7 @@ class VeiculoServiceTest {
         CadastrarVeiculoCommand command = new CadastrarVeiculoCommand(
                 clienteId, "ABC-1234", "Toyota", "Corolla", 2020, "Prata");
         when(clienteRepository.existsById(clienteId)).thenReturn(true);
-        when(veiculoRepository.existsByPlaca("ABC-1234")).thenReturn(true);
+        when(veiculoRepository.existsByPlaca("ABC1234")).thenReturn(true);
 
         assertThatThrownBy(() -> veiculoService.cadastrar(command))
                 .isInstanceOf(IllegalArgumentException.class)

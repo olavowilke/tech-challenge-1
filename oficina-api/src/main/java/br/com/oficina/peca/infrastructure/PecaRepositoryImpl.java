@@ -30,6 +30,13 @@ public class PecaRepositoryImpl implements PecaRepository {
     }
 
     @Override
+    public List<Peca> findAllAtivos() {
+        return jpaRepository.findByAtivoTrue().stream()
+                .map(PecaMapper::toDomain)
+                .toList();
+    }
+
+    @Override
     public Peca save(Peca peca) {
         PecaEntity entity = PecaMapper.toEntity(peca);
         PecaEntity saved = jpaRepository.save(entity);

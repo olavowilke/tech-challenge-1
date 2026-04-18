@@ -5,11 +5,13 @@ import br.com.oficina.cliente.domain.ClienteRepository;
 import br.com.oficina.cliente.domain.Documento;
 import br.com.oficina.shared.domain.RecursoNaoEncontradoException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
 
 @Service
+@Transactional(readOnly = true)
 public class ClienteService {
 
     private final ClienteRepository clienteRepository;
@@ -18,6 +20,7 @@ public class ClienteService {
         this.clienteRepository = clienteRepository;
     }
 
+    @Transactional
     public Cliente cadastrar(CadastrarClienteCommand command) {
         String numeroLimpo = command.documento().replaceAll("[^0-9]", "");
         if (clienteRepository.existsByDocumento(numeroLimpo)) {
@@ -28,6 +31,7 @@ public class ClienteService {
         return clienteRepository.save(cliente);
     }
 
+    @Transactional
     public Cliente atualizar(UUID id, AtualizarClienteCommand command) {
         Cliente cliente = clienteRepository.findById(id)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Cliente", id));
@@ -41,9 +45,10 @@ public class ClienteService {
     }
 
     public List<Cliente> listar() {
-        return clienteRepository.findAll();
+        return clienteRepository.findAllAtivos();
     }
 
+    @Transactional
     public void remover(UUID id) {
         Cliente cliente = clienteRepository.findById(id)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Cliente", id));

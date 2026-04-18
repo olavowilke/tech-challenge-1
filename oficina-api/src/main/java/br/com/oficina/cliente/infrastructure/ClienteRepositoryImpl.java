@@ -40,6 +40,13 @@ public class ClienteRepositoryImpl implements ClienteRepository {
     }
 
     @Override
+    public List<Cliente> findAllAtivos() {
+        return jpaRepository.findByAtivoTrue().stream()
+                .map(ClienteMapper::toDomain)
+                .toList();
+    }
+
+    @Override
     public Cliente save(Cliente cliente) {
         ClienteEntity entity = ClienteMapper.toEntity(cliente);
         ClienteEntity saved = jpaRepository.save(entity);

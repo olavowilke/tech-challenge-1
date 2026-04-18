@@ -88,17 +88,17 @@ public class OrdemServicoController {
     }
 
     @Operation(summary = "Consultar status da OS (público)",
-            description = "Endpoint público — não requer autenticação. Permite o cliente consultar o status da sua OS")
+            description = "Endpoint público — não requer autenticação. Retorna apenas id e status, sem dados internos")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Status da OS",
-                    content = @Content(schema = @Schema(implementation = OrdemServicoResponse.class))),
+                    content = @Content(schema = @Schema(implementation = OrdemServicoStatusResponse.class))),
             @ApiResponse(responseCode = "404", description = "OS não encontrada",
                     content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
     @SecurityRequirements
     @GetMapping("/public/ordens-servico/{id}/status")
-    public ResponseEntity<OrdemServicoResponse> consultarStatus(@PathVariable UUID id) {
-        return ResponseEntity.ok(OrdemServicoResponse.from(ordemServicoService.buscarPorId(id)));
+    public ResponseEntity<OrdemServicoStatusResponse> consultarStatus(@PathVariable UUID id) {
+        return ResponseEntity.ok(OrdemServicoStatusResponse.from(ordemServicoService.buscarPorId(id)));
     }
 
     @Operation(summary = "Adicionar serviço à OS",
@@ -106,7 +106,7 @@ public class OrdemServicoController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Serviço adicionado",
                     content = @Content(schema = @Schema(implementation = OrdemServicoResponse.class))),
-            @ApiResponse(responseCode = "400", description = "OS não permite edição no status atual",
+            @ApiResponse(responseCode = "409", description = "OS não permite edição no status atual",
                     content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "401", description = "Não autenticado",
                     content = @Content(schema = @Schema(implementation = ApiError.class))),
@@ -124,7 +124,9 @@ public class OrdemServicoController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Serviço removido",
                     content = @Content(schema = @Schema(implementation = OrdemServicoResponse.class))),
-            @ApiResponse(responseCode = "400", description = "Item não encontrado ou OS não editável",
+            @ApiResponse(responseCode = "400", description = "Item não encontrado",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "409", description = "OS não editável no status atual",
                     content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "401", description = "Não autenticado",
                     content = @Content(schema = @Schema(implementation = ApiError.class))),
@@ -142,7 +144,9 @@ public class OrdemServicoController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Peça adicionada",
                     content = @Content(schema = @Schema(implementation = OrdemServicoResponse.class))),
-            @ApiResponse(responseCode = "400", description = "Estoque insuficiente ou OS não editável",
+            @ApiResponse(responseCode = "400", description = "Estoque insuficiente",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "409", description = "OS não editável no status atual",
                     content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "401", description = "Não autenticado",
                     content = @Content(schema = @Schema(implementation = ApiError.class))),
@@ -161,7 +165,9 @@ public class OrdemServicoController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Peça removida",
                     content = @Content(schema = @Schema(implementation = OrdemServicoResponse.class))),
-            @ApiResponse(responseCode = "400", description = "Item não encontrado ou OS não editável",
+            @ApiResponse(responseCode = "400", description = "Item não encontrado",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "409", description = "OS não editável no status atual",
                     content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "401", description = "Não autenticado",
                     content = @Content(schema = @Schema(implementation = ApiError.class))),

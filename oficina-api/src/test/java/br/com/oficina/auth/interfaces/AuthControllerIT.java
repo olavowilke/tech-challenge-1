@@ -11,13 +11,31 @@ class AuthControllerIT extends BaseControllerIT {
 
     @Test
     void shouldReturn201WhenRegisteringNewUser() {
-        RegisterRequest request = new RegisterRequest("mecanico1", "senha123", Role.MECANICO);
+        RegisterRequest request = new RegisterRequest("mecanico1", "senha123");
         ResponseEntity<UsuarioResponse> response = restTemplate.postForEntity(
                 "/auth/register", request, UsuarioResponse.class);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals("mecanico1", response.getBody().username());
+        assertEquals(Role.MECANICO, response.getBody().role());
+    }
+
+    @Test
+    void publicRegisterShouldAlwaysCreateMecanicoEvenIfClientAttemptsAdmin() {
+        // Regression: public /auth/register previously accepted a role field and
+        // allowed unauthenticated ADMIN creation. The field was removed, so any
+        // extra fields are ignored and the created user must always be MECANICO.
+        var body = new java.util.HashMap<String, Object>();
+        body.put("username", "mecanico_admin_attempt");
+        body.put("password", "senha123");
+        body.put("role", "ADMIN"); // ignored server-side
+
+        ResponseEntity<UsuarioResponse> response = restTemplate.postForEntity(
+                "/auth/register", body, UsuarioResponse.class);
+
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertNotNull(response.getBody());
         assertEquals(Role.MECANICO, response.getBody().role());
     }
 
@@ -31,10 +49,11 @@ class AuthControllerIT extends BaseControllerIT {
         assertNotNull(response.getBody());
         assertNotNull(response.getBody().token());
         assertFalse(response.getBody().token().isBlank());
+        assertEquals("ADMIN", response.getBody().role());
     }
 
     @Test
-    void shouldReturn400WhenLoginWithWrongPassword() {
+    void shouldReturn401WhenLoginWithWrongPassword() {
         LoginRequest request = new LoginRequest("admin", "senhaerrada");
         ResponseEntity<Object> response = restTemplate.postForEntity(
                 "/auth/login", request, Object.class);
@@ -44,7 +63,7 @@ class AuthControllerIT extends BaseControllerIT {
 
     @Test
     void shouldReturn400WhenRegisteringDuplicateUsername() {
-        RegisterRequest request = new RegisterRequest("admin", "qualquersenha", Role.ADMIN);
+        RegisterRequest request = new RegisterRequest("admin", "qualquersenha");
         ResponseEntity<Object> response = restTemplate.postForEntity(
                 "/auth/register", request, Object.class);
 
@@ -59,15 +78,7 @@ class AuthControllerIT extends BaseControllerIT {
 
     @Test
     void shouldReturn200WhenAccessingProtectedRouteWithValidToken() {
-        // Primeiro faz login
-        LoginRequest loginRequest = new LoginRequest("admin", "admin123");
-        ResponseEntity<AuthResponse> loginResponse = restTemplate.postForEntity(
-                "/auth/login", loginRequest, AuthResponse.class);
-        String token = loginResponse.getBody().token();
-
-        // Usa o token para acessar rota protegida
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(token);
+        HttpHeaders headers = authHeaders();
         HttpEntity<Void> entity = new HttpEntity<>(headers);
 
         ResponseEntity<Object> response = restTemplate.exchange(
@@ -78,17 +89,8 @@ class AuthControllerIT extends BaseControllerIT {
 
     @Test
     void shouldReturn200WhenAccessingPublicStatusEndpointWithoutToken() {
-        // A rota /public/** deve ser acessível sem token
-        // Criamos uma OS primeiro com token
-        LoginRequest loginRequest = new LoginRequest("admin", "admin123");
-        ResponseEntity<AuthResponse> loginResponse = restTemplate.postForEntity(
-                "/auth/login", loginRequest, AuthResponse.class);
-        String token = loginResponse.getBody().token();
+        HttpHeaders headers = authHeaders();
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(token);
-
-        // Cria cliente
         var clienteBody = new java.util.HashMap<String, Object>();
         clienteBody.put("nome", "João");
         clienteBody.put("email", "joao@test.com");
@@ -98,9 +100,9 @@ class AuthControllerIT extends BaseControllerIT {
         ResponseEntity<java.util.Map> clienteRes = restTemplate.exchange(
                 "/clientes", HttpMethod.POST,
                 new HttpEntity<>(clienteBody, headers), java.util.Map.class);
+        assertNotNull(clienteRes.getBody(), "Criação de cliente falhou");
         java.util.UUID clienteId = java.util.UUID.fromString((String) clienteRes.getBody().get("id"));
 
-        // Cria veículo
         var veiculoBody = new java.util.HashMap<String, Object>();
         veiculoBody.put("clienteId", clienteId.toString());
         veiculoBody.put("placa", "XYZ-9999");
@@ -111,20 +113,29 @@ class AuthControllerIT extends BaseControllerIT {
         ResponseEntity<java.util.Map> veiculoRes = restTemplate.exchange(
                 "/veiculos", HttpMethod.POST,
                 new HttpEntity<>(veiculoBody, headers), java.util.Map.class);
+        assertNotNull(veiculoRes.getBody(), "Criação de veículo falhou");
         java.util.UUID veiculoId = java.util.UUID.fromString((String) veiculoRes.getBody().get("id"));
 
-        // Cria OS
         var osBody = new java.util.HashMap<String, Object>();
         osBody.put("clienteId", clienteId.toString());
         osBody.put("veiculoId", veiculoId.toString());
         ResponseEntity<java.util.Map> osRes = restTemplate.exchange(
                 "/ordens-servico", HttpMethod.POST,
                 new HttpEntity<>(osBody, headers), java.util.Map.class);
+        assertNotNull(osRes.getBody(), "Criação de OS falhou");
         String osId = (String) osRes.getBody().get("id");
 
         // Acessa o status público SEM token
-        ResponseEntity<Object> publicResponse = restTemplate.getForEntity(
-                "/public/ordens-servico/" + osId + "/status", Object.class);
+        ResponseEntity<java.util.Map> publicResponse = restTemplate.getForEntity(
+                "/public/ordens-servico/" + osId + "/status", java.util.Map.class);
         assertEquals(HttpStatus.OK, publicResponse.getStatusCode());
+        assertNotNull(publicResponse.getBody());
+        // Reduced response exposes only id + status, never line items
+        assertEquals(osId, publicResponse.getBody().get("id"));
+        assertNotNull(publicResponse.getBody().get("status"));
+        assertNull(publicResponse.getBody().get("itensServico"),
+                "Endpoint público não pode vazar itens de serviço");
+        assertNull(publicResponse.getBody().get("itensPeca"),
+                "Endpoint público não pode vazar itens de peça");
     }
 }

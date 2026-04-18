@@ -1,7 +1,9 @@
 package br.com.oficina.auth.interfaces;
 
 import br.com.oficina.auth.application.AuthService;
+import br.com.oficina.auth.application.LoginResult;
 import br.com.oficina.auth.application.RegisterCommand;
+import br.com.oficina.auth.domain.Role;
 import br.com.oficina.auth.domain.Usuario;
 import br.com.oficina.shared.domain.ApiError;
 import io.swagger.v3.oas.annotations.Operation;
@@ -46,7 +48,9 @@ public class AuthController {
     })
     @PostMapping("/register")
     public ResponseEntity<UsuarioResponse> register(@Valid @RequestBody RegisterRequest request) {
-        RegisterCommand command = new RegisterCommand(request.username(), request.password(), request.role());
+        // Public registration always creates MECANICO accounts; ADMIN must be created
+        // via AdminInitializer or directly by another admin through the database.
+        RegisterCommand command = new RegisterCommand(request.username(), request.password(), Role.MECANICO);
         Usuario usuario = authService.register(command);
         return ResponseEntity.status(HttpStatus.CREATED).body(UsuarioResponse.from(usuario));
     }
@@ -62,7 +66,7 @@ public class AuthController {
     })
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
-        String token = authService.login(request.username(), request.password());
-        return ResponseEntity.ok(new AuthResponse(token, request.username(), null, expirationMs));
+        LoginResult result = authService.login(request.username(), request.password());
+        return ResponseEntity.ok(new AuthResponse(result.token(), result.username(), result.role().name(), expirationMs));
     }
 }
