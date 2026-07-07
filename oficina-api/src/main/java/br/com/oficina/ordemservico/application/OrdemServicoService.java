@@ -4,8 +4,8 @@ import br.com.oficina.cliente.domain.ClienteRepository;
 import br.com.oficina.ordemservico.domain.*;
 import br.com.oficina.peca.domain.Peca;
 import br.com.oficina.peca.domain.PecaRepository;
-import br.com.oficina.servico.domain.Servico;
-import br.com.oficina.servico.domain.ServicoRepository;
+import br.com.oficina.servico.entities.Servico;
+import br.com.oficina.servico.gateways.ServicoGateway;
 import br.com.oficina.shared.domain.RecursoNaoEncontradoException;
 import br.com.oficina.veiculo.domain.VeiculoRepository;
 import org.springframework.stereotype.Service;
@@ -20,18 +20,18 @@ import java.util.UUID;
 public class OrdemServicoService {
 
     private final OrdemServicoRepository ordemServicoRepository;
-    private final ServicoRepository servicoRepository;
+    private final ServicoGateway servicoGateway;
     private final PecaRepository pecaRepository;
     private final ClienteRepository clienteRepository;
     private final VeiculoRepository veiculoRepository;
 
     public OrdemServicoService(OrdemServicoRepository ordemServicoRepository,
-                               ServicoRepository servicoRepository,
+                               ServicoGateway servicoGateway,
                                PecaRepository pecaRepository,
                                ClienteRepository clienteRepository,
                                VeiculoRepository veiculoRepository) {
         this.ordemServicoRepository = ordemServicoRepository;
-        this.servicoRepository = servicoRepository;
+        this.servicoGateway = servicoGateway;
         this.pecaRepository = pecaRepository;
         this.clienteRepository = clienteRepository;
         this.veiculoRepository = veiculoRepository;
@@ -52,7 +52,7 @@ public class OrdemServicoService {
     @Transactional
     public OrdemServico adicionarServico(AdicionarServicoCommand command) {
         OrdemServico os = buscarOuLancar(command.ordemServicoId());
-        Servico servico = servicoRepository.findById(command.servicoId())
+        Servico servico = servicoGateway.findById(command.servicoId())
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Serviço", command.servicoId()));
         ItemServico item = ItemServico.novo(servico.getId(), servico.getNome(), servico.getPreco());
         os.adicionarServico(item);

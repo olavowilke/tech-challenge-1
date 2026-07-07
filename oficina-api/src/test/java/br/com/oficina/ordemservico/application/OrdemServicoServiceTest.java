@@ -6,8 +6,8 @@ import br.com.oficina.ordemservico.domain.OrdemServicoRepository;
 import br.com.oficina.ordemservico.domain.StatusOS;
 import br.com.oficina.peca.domain.Peca;
 import br.com.oficina.peca.domain.PecaRepository;
-import br.com.oficina.servico.domain.Servico;
-import br.com.oficina.servico.domain.ServicoRepository;
+import br.com.oficina.servico.entities.Servico;
+import br.com.oficina.servico.gateways.ServicoGateway;
 import br.com.oficina.shared.domain.RecursoNaoEncontradoException;
 import br.com.oficina.veiculo.domain.VeiculoRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,7 +32,7 @@ class OrdemServicoServiceTest {
     private OrdemServicoRepository ordemServicoRepository;
 
     @Mock
-    private ServicoRepository servicoRepository;
+    private ServicoGateway servicoGateway;
 
     @Mock
     private PecaRepository pecaRepository;
@@ -100,7 +100,7 @@ class OrdemServicoServiceTest {
                 new BigDecimal("150.00"), 60, true, null, null);
 
         when(ordemServicoRepository.findById(os.getId())).thenReturn(Optional.of(os));
-        when(servicoRepository.findById(servico.getId())).thenReturn(Optional.of(servico));
+        when(servicoGateway.findById(servico.getId())).thenReturn(Optional.of(servico));
         when(ordemServicoRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         AdicionarServicoCommand command = new AdicionarServicoCommand(os.getId(), servico.getId());
@@ -114,7 +114,7 @@ class OrdemServicoServiceTest {
     void deveLancarExcecaoAoAdicionarServicoInexistente() {
         OrdemServico os = OrdemServico.nova(clienteId, veiculoId, null);
         when(ordemServicoRepository.findById(os.getId())).thenReturn(Optional.of(os));
-        when(servicoRepository.findById(any())).thenReturn(Optional.empty());
+        when(servicoGateway.findById(any())).thenReturn(Optional.empty());
 
         AdicionarServicoCommand command = new AdicionarServicoCommand(os.getId(), UUID.randomUUID());
         assertThatThrownBy(() -> service.adicionarServico(command))

@@ -1,7 +1,7 @@
 package br.com.oficina.servico.infrastructure;
 
-import br.com.oficina.servico.domain.Servico;
-import br.com.oficina.servico.domain.ServicoRepository;
+import br.com.oficina.servico.entities.Servico;
+import br.com.oficina.servico.gateways.ServicoGateway;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -9,11 +9,11 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public class ServicoRepositoryImpl implements ServicoRepository {
+public class ServicoGatewayImpl implements ServicoGateway {
 
     private final ServicoJpaRepository jpaRepository;
 
-    public ServicoRepositoryImpl(ServicoJpaRepository jpaRepository) {
+    public ServicoGatewayImpl(ServicoJpaRepository jpaRepository) {
         this.jpaRepository = jpaRepository;
     }
 
@@ -38,8 +38,8 @@ public class ServicoRepositoryImpl implements ServicoRepository {
 
     @Override
     public Servico save(Servico servico) {
-        ServicoEntity entity = ServicoMapper.toEntity(servico);
-        ServicoEntity saved = jpaRepository.save(entity);
+        ServicoData data = ServicoMapper.toData(servico);
+        ServicoData saved = jpaRepository.save(data);
         return ServicoMapper.toDomain(saved);
     }
 

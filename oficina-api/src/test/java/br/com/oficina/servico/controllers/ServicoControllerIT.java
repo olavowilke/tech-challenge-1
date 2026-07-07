@@ -1,5 +1,6 @@
-package br.com.oficina.servico.interfaces;
+package br.com.oficina.servico.controllers;
 
+import br.com.oficina.servico.presenters.ServicoResponse;
 import br.com.oficina.shared.BaseControllerIT;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;

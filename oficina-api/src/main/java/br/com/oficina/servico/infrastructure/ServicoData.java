@@ -17,7 +17,7 @@ import java.util.UUID;
 @Getter
 @Setter
 @NoArgsConstructor
-public class ServicoEntity {
+public class ServicoData {
 
     @Id
     private UUID id;
