@@ -1,4 +1,4 @@
-package br.com.oficina.servico.domain;
+package br.com.oficina.servico.entities;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

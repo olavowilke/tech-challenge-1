@@ -21,6 +21,7 @@ application-local.yml
 logs/
 
 design-docs/
+docs
 
 *.mcp*
 *.claude

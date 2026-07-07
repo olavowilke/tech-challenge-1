@@ -1,4 +1,4 @@
-package br.com.oficina.servico.application;
+package br.com.oficina.servico.usecases;
 
 import java.math.BigDecimal;
 

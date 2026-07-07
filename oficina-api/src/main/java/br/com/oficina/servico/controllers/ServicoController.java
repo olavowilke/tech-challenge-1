@@ -1,9 +1,14 @@
-package br.com.oficina.servico.interfaces;
+package br.com.oficina.servico.controllers;
 
-import br.com.oficina.servico.application.AtualizarServicoCommand;
-import br.com.oficina.servico.application.CadastrarServicoCommand;
-import br.com.oficina.servico.application.ServicoService;
-import br.com.oficina.servico.domain.Servico;
+import br.com.oficina.servico.presenters.ServicoPresenter;
+import br.com.oficina.servico.presenters.ServicoResponse;
+import br.com.oficina.servico.usecases.AtualizarServicoCommand;
+import br.com.oficina.servico.usecases.AtualizarServicoUseCase;
+import br.com.oficina.servico.usecases.BuscarServicoUseCase;
+import br.com.oficina.servico.usecases.CadastrarServicoCommand;
+import br.com.oficina.servico.usecases.CadastrarServicoUseCase;
+import br.com.oficina.servico.usecases.ListarServicosUseCase;
+import br.com.oficina.servico.usecases.RemoverServicoUseCase;
 import br.com.oficina.shared.domain.ApiError;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -24,10 +29,25 @@ import java.util.UUID;
 @Tag(name = "Catálogo de Serviços", description = "Gestão do catálogo de serviços da oficina")
 public class ServicoController {
 
-    private final ServicoService servicoService;
+    private final CadastrarServicoUseCase cadastrarServico;
+    private final AtualizarServicoUseCase atualizarServico;
+    private final BuscarServicoUseCase buscarServico;
+    private final ListarServicosUseCase listarServicos;
+    private final RemoverServicoUseCase removerServico;
+    private final ServicoPresenter presenter;
 
-    public ServicoController(ServicoService servicoService) {
-        this.servicoService = servicoService;
+    public ServicoController(CadastrarServicoUseCase cadastrarServico,
+                             AtualizarServicoUseCase atualizarServico,
+                             BuscarServicoUseCase buscarServico,
+                             ListarServicosUseCase listarServicos,
+                             RemoverServicoUseCase removerServico,
+                             ServicoPresenter presenter) {
+        this.cadastrarServico = cadastrarServico;
+        this.atualizarServico = atualizarServico;
+        this.buscarServico = buscarServico;
+        this.listarServicos = listarServicos;
+        this.removerServico = removerServico;
+        this.presenter = presenter;
     }
 
     @Operation(summary = "Cadastrar serviço", description = "Adiciona um novo serviço ao catálogo")
@@ -43,8 +63,7 @@ public class ServicoController {
     public ResponseEntity<ServicoResponse> cadastrar(@Valid @RequestBody CadastrarServicoRequest request) {
         CadastrarServicoCommand command = new CadastrarServicoCommand(
                 request.nome(), request.descricao(), request.preco(), request.tempoEstimadoMinutos());
-        Servico servico = servicoService.cadastrar(command);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ServicoResponse.from(servico));
+        return ResponseEntity.status(HttpStatus.CREATED).body(presenter.present(cadastrarServico.execute(command)));
     }
 
     @Operation(summary = "Listar serviços", description = "Retorna todos os serviços ativos do catálogo")
@@ -56,7 +75,7 @@ public class ServicoController {
     })
     @GetMapping
     public ResponseEntity<List<ServicoResponse>> listar() {
-        return ResponseEntity.ok(servicoService.listar().stream().map(ServicoResponse::from).toList());
+        return ResponseEntity.ok(presenter.present(listarServicos.execute()));
     }
 
     @Operation(summary = "Buscar serviço por ID")
@@ -70,7 +89,7 @@ public class ServicoController {
     })
     @GetMapping("/{id}")
     public ResponseEntity<ServicoResponse> buscarPorId(@PathVariable UUID id) {
-        return ResponseEntity.ok(ServicoResponse.from(servicoService.buscarPorId(id)));
+        return ResponseEntity.ok(presenter.present(buscarServico.execute(id)));
     }
 
     @Operation(summary = "Atualizar serviço", description = "Atualiza nome, descrição, preço e tempo estimado")
@@ -86,10 +105,10 @@ public class ServicoController {
     })
     @PutMapping("/{id}")
     public ResponseEntity<ServicoResponse> atualizar(@PathVariable UUID id,
-                                                      @Valid @RequestBody AtualizarServicoRequest request) {
+                                                     @Valid @RequestBody AtualizarServicoRequest request) {
         AtualizarServicoCommand command = new AtualizarServicoCommand(
                 request.nome(), request.descricao(), request.preco(), request.tempoEstimadoMinutos());
-        return ResponseEntity.ok(ServicoResponse.from(servicoService.atualizar(id, command)));
+        return ResponseEntity.ok(presenter.present(atualizarServico.execute(id, command)));
     }
 
     @Operation(summary = "Remover serviço", description = "Desativa o serviço do catálogo (soft delete)")
@@ -102,7 +121,7 @@ public class ServicoController {
     })
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> remover(@PathVariable UUID id) {
-        servicoService.remover(id);
+        removerServico.execute(id);
         return ResponseEntity.noContent().build();
     }
 }

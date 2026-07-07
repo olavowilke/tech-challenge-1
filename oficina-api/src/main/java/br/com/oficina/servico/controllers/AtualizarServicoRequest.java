@@ -1,4 +1,4 @@
-package br.com.oficina.servico.interfaces;
+package br.com.oficina.servico.controllers;
 
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
