@@ -1,38 +1,38 @@
 package br.com.oficina.veiculo.infrastructure;
 
-import br.com.oficina.veiculo.domain.Placa;
-import br.com.oficina.veiculo.domain.Veiculo;
+import br.com.oficina.veiculo.entities.Placa;
+import br.com.oficina.veiculo.entities.Veiculo;
 
 public class VeiculoMapper {
 
     private VeiculoMapper() {}
 
-    public static VeiculoEntity toEntity(Veiculo veiculo) {
-        VeiculoEntity entity = new VeiculoEntity();
-        entity.setId(veiculo.getId());
-        entity.setClienteId(veiculo.getClienteId());
-        entity.setPlaca(veiculo.getPlaca().valor());
-        entity.setMarca(veiculo.getMarca());
-        entity.setModelo(veiculo.getModelo());
-        entity.setAno(veiculo.getAno());
-        entity.setCor(veiculo.getCor());
-        entity.setCriadoEm(veiculo.getCriadoEm());
-        entity.setAtualizadoEm(veiculo.getAtualizadoEm());
-        return entity;
+    public static VeiculoData toData(Veiculo veiculo) {
+        VeiculoData data = new VeiculoData();
+        data.setId(veiculo.getId());
+        data.setClienteId(veiculo.getClienteId());
+        data.setPlaca(veiculo.getPlaca().valor());
+        data.setMarca(veiculo.getMarca());
+        data.setModelo(veiculo.getModelo());
+        data.setAno(veiculo.getAno());
+        data.setCor(veiculo.getCor());
+        data.setCriadoEm(veiculo.getCriadoEm());
+        data.setAtualizadoEm(veiculo.getAtualizadoEm());
+        return data;
     }
 
-    public static Veiculo toDomain(VeiculoEntity entity) {
-        Placa placa = new Placa(entity.getPlaca());
+    public static Veiculo toDomain(VeiculoData data) {
+        Placa placa = new Placa(data.getPlaca());
         return Veiculo.reconstituir(
-                entity.getId(),
-                entity.getClienteId(),
+                data.getId(),
+                data.getClienteId(),
                 placa,
-                entity.getMarca(),
-                entity.getModelo(),
-                entity.getAno(),
-                entity.getCor(),
-                entity.getCriadoEm(),
-                entity.getAtualizadoEm()
+                data.getMarca(),
+                data.getModelo(),
+                data.getAno(),
+                data.getCor(),
+                data.getCriadoEm(),
+                data.getAtualizadoEm()
         );
     }
 }

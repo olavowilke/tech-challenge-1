@@ -6,8 +6,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface VeiculoJpaRepository extends JpaRepository<VeiculoEntity, UUID> {
-    Optional<VeiculoEntity> findByPlaca(String placa);
+public interface VeiculoJpaRepository extends JpaRepository<VeiculoData, UUID> {
+    Optional<VeiculoData> findByPlaca(String placa);
     boolean existsByPlaca(String placa);
-    List<VeiculoEntity> findByClienteId(UUID clienteId);
+    List<VeiculoData> findByClienteId(UUID clienteId);
 }

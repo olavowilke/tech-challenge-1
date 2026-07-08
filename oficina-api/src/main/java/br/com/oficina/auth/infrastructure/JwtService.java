@@ -1,5 +1,6 @@
 package br.com.oficina.auth.infrastructure;
 
+import br.com.oficina.auth.gateways.TokenGateway;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -11,7 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 @Component
-public class JwtService {
+public class JwtService implements TokenGateway {
 
     private final SecretKey secretKey;
     private final long expirationMs;
@@ -22,6 +23,7 @@ public class JwtService {
         this.expirationMs = expirationMs;
     }
 
+    @Override
     public String generateToken(String username, String role) {
         Date now = new Date();
         return Jwts.builder()

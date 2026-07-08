@@ -5,9 +5,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface UsuarioJpaRepository extends JpaRepository<UsuarioEntity, UUID> {
+public interface UsuarioJpaRepository extends JpaRepository<UsuarioData, UUID> {
 
-    Optional<UsuarioEntity> findByUsername(String username);
+    Optional<UsuarioData> findByUsername(String username);
 
     boolean existsByUsername(String username);
 }

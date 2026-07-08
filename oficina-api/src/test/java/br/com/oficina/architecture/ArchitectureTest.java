@@ -12,8 +12,11 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
  * Testes da regra de dependência da Clean Architecture (ver ADR 0001).
  *
  * <p>As regras miram os subpacotes das camadas ({@code ..entities..}, {@code ..usecases..},
- * {@code ..gateways..}). Atualmente cobrem o contexto piloto {@code servico} e passarão a cobrir
- * automaticamente cada bounded context à medida que forem migrados (Etapas 2 e 3).
+ * {@code ..gateways..}) e cobrem automaticamente cada bounded context à medida que é migrado.
+ * Com a Etapa 2 concluída, cobrem os <b>6</b> contextos: {@code servico}, {@code ordemservico},
+ * {@code cliente}, {@code veiculo}, {@code peca} e {@code auth}. Neste último, o acoplamento ao
+ * Spring Security foi isolado por ports ({@code TokenGateway}, {@code AutenticadorGateway}) para
+ * manter os Use Cases livres de {@code infrastructure}.
  */
 class ArchitectureTest {
 
