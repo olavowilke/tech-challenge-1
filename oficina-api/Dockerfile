@@ -25,4 +25,8 @@ COPY --from=builder /app/target/*.jar app.jar
 
 EXPOSE 8080
 
+# Healthcheck via actuator (wget vem do busybox no alpine). O context-path é /api.
+HEALTHCHECK --interval=15s --timeout=5s --start-period=40s --retries=5 \
+    CMD wget -qO- http://localhost:8080/api/actuator/health | grep -q '"status":"UP"' || exit 1
+
 ENTRYPOINT ["java", "-jar", "app.jar"]

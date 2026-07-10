@@ -6,8 +6,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface ClienteJpaRepository extends JpaRepository<ClienteEntity, UUID> {
-    Optional<ClienteEntity> findByDocumento(String documento);
+public interface ClienteJpaRepository extends JpaRepository<ClienteData, UUID> {
+    Optional<ClienteData> findByDocumento(String documento);
     boolean existsByDocumento(String documento);
-    List<ClienteEntity> findByAtivoTrue();
+    List<ClienteData> findByAtivoTrue();
 }

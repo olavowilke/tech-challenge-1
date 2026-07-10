@@ -1,8 +1,8 @@
 package br.com.oficina.ordemservico.infrastructure;
 
-import br.com.oficina.ordemservico.domain.ItemPeca;
-import br.com.oficina.ordemservico.domain.ItemServico;
-import br.com.oficina.ordemservico.domain.OrdemServico;
+import br.com.oficina.ordemservico.entities.ItemPeca;
+import br.com.oficina.ordemservico.entities.ItemServico;
+import br.com.oficina.ordemservico.entities.OrdemServico;
 
 import java.util.List;
 
@@ -10,65 +10,65 @@ public class OrdemServicoMapper {
 
     private OrdemServicoMapper() {}
 
-    public static OrdemServicoEntity toEntity(OrdemServico os) {
-        OrdemServicoEntity entity = new OrdemServicoEntity();
-        entity.setId(os.getId());
-        entity.setClienteId(os.getClienteId());
-        entity.setVeiculoId(os.getVeiculoId());
-        entity.setStatus(os.getStatus());
-        entity.setObservacoes(os.getObservacoes());
-        entity.setCriadoEm(os.getCriadoEm());
-        entity.setAtualizadoEm(os.getAtualizadoEm());
-        entity.setInicioExecucao(os.getInicioExecucao());
-        entity.setFimExecucao(os.getFimExecucao());
+    public static OrdemServicoData toData(OrdemServico os) {
+        OrdemServicoData data = new OrdemServicoData();
+        data.setId(os.getId());
+        data.setClienteId(os.getClienteId());
+        data.setVeiculoId(os.getVeiculoId());
+        data.setStatus(os.getStatus());
+        data.setObservacoes(os.getObservacoes());
+        data.setCriadoEm(os.getCriadoEm());
+        data.setAtualizadoEm(os.getAtualizadoEm());
+        data.setInicioExecucao(os.getInicioExecucao());
+        data.setFimExecucao(os.getFimExecucao());
 
-        entity.getItensServico().clear();
+        data.getItensServico().clear();
         for (ItemServico item : os.getItensServico()) {
-            ItemServicoEntity itemEntity = new ItemServicoEntity();
-            itemEntity.setId(item.getId());
-            itemEntity.setOrdemServico(entity);
-            itemEntity.setServicoId(item.getServicoId());
-            itemEntity.setNomeServico(item.getNomeServico());
-            itemEntity.setValorCobrado(item.getValorCobrado());
-            entity.getItensServico().add(itemEntity);
+            ItemServicoData itemData = new ItemServicoData();
+            itemData.setId(item.getId());
+            itemData.setOrdemServico(data);
+            itemData.setServicoId(item.getServicoId());
+            itemData.setNomeServico(item.getNomeServico());
+            itemData.setValorCobrado(item.getValorCobrado());
+            data.getItensServico().add(itemData);
         }
 
-        entity.getItensPeca().clear();
+        data.getItensPeca().clear();
         for (ItemPeca item : os.getItensPeca()) {
-            ItemPecaEntity itemEntity = new ItemPecaEntity();
-            itemEntity.setId(item.getId());
-            itemEntity.setOrdemServico(entity);
-            itemEntity.setPecaId(item.getPecaId());
-            itemEntity.setNomePeca(item.getNomePeca());
-            itemEntity.setQuantidade(item.getQuantidade());
-            itemEntity.setValorUnitario(item.getValorUnitario());
-            entity.getItensPeca().add(itemEntity);
+            ItemPecaData itemData = new ItemPecaData();
+            itemData.setId(item.getId());
+            itemData.setOrdemServico(data);
+            itemData.setPecaId(item.getPecaId());
+            itemData.setNomePeca(item.getNomePeca());
+            itemData.setQuantidade(item.getQuantidade());
+            itemData.setValorUnitario(item.getValorUnitario());
+            data.getItensPeca().add(itemData);
         }
 
-        return entity;
+        return data;
     }
 
-    public static OrdemServico toDomain(OrdemServicoEntity entity) {
-        List<ItemServico> itensServico = entity.getItensServico().stream()
+    public static OrdemServico toDomain(OrdemServicoData data) {
+        List<ItemServico> itensServico = data.getItensServico().stream()
                 .map(i -> ItemServico.reconstituir(i.getId(), i.getServicoId(), i.getNomeServico(), i.getValorCobrado()))
                 .toList();
 
-        List<ItemPeca> itensPeca = entity.getItensPeca().stream()
+        List<ItemPeca> itensPeca = data.getItensPeca().stream()
                 .map(i -> ItemPeca.reconstituir(i.getId(), i.getPecaId(), i.getNomePeca(), i.getQuantidade(), i.getValorUnitario()))
                 .toList();
 
         return OrdemServico.reconstituir(
-                entity.getId(),
-                entity.getClienteId(),
-                entity.getVeiculoId(),
-                entity.getStatus(),
-                entity.getObservacoes(),
+                data.getId(),
+                data.getClienteId(),
+                data.getVeiculoId(),
+                data.getStatus(),
+                data.getObservacoes(),
                 itensServico,
                 itensPeca,
-                entity.getCriadoEm(),
-                entity.getAtualizadoEm(),
-                entity.getInicioExecucao(),
-                entity.getFimExecucao()
+                data.getCriadoEm(),
+                data.getAtualizadoEm(),
+                data.getInicioExecucao(),
+                data.getFimExecucao()
         );
     }
 }

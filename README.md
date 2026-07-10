@@ -3,7 +3,14 @@
 [![Build Status](https://github.com/olavowilke/tech-challenge-1/actions/workflows/ci.yml/badge.svg)](https://github.com/olavowilke/tech-challenge-1/actions/workflows/ci.yml)
 
 Sistema Integrado de Atendimento e Execução de Serviços para oficina mecânica.
-MVP back-end desenvolvido como Tech Challenge da pós-graduação FIAP PosTech.
+Back-end desenvolvido como Tech Challenge da pós-graduação FIAP PosTech.
+
+> **Fase 2 — foco em qualidade, resiliência e escalabilidade.** Evolui a Fase 1 com
+> refatoração para **Clean Architecture**, novos requisitos funcionais (abertura
+> consolidada de OS, listagem ordenada, webhook de aprovação de orçamento,
+> notificação por e-mail) e infraestrutura de **Docker → Kubernetes (kind) →
+> Terraform → CI/CD (GitHub Actions)** com **autoscaling (HPA)**.
+> Planejamento detalhado: [`design-docs/tech-challenge-2/PLANEJAMENTO-FASE-2.md`](design-docs/tech-challenge-2/PLANEJAMENTO-FASE-2.md).
 
 ---
 
@@ -12,33 +19,53 @@ MVP back-end desenvolvido como Tech Challenge da pós-graduação FIAP PosTech.
 | Camada | Tecnologia |
 |---|---|
 | Linguagem | Java 21 |
-| Framework | Spring Boot 3.2.3 |
+| Framework | Spring Boot 3.4.5 |
+| Arquitetura | Clean Architecture (Entities / Use Cases / Gateways / Presenters / Controllers) |
 | Banco de dados | PostgreSQL 16 |
-| Migrations | Flyway 9 |
+| Migrations | Flyway |
 | Segurança | Spring Security + JWT (JJWT 0.12) |
+| Notificações | Spring Mail (SMTP/SendGrid) + webhook de entrada |
 | Documentação | SpringDoc OpenAPI / Swagger UI |
-| Testes | JUnit 5 + Mockito + Testcontainers |
+| Testes | JUnit 5 + Mockito + Testcontainers + ArchUnit |
 | Cobertura | JaCoCo (mínimo 80% nos domínios críticos) |
 | Container | Docker + Docker Compose |
+| Orquestração | Kubernetes (kind) + HPA + metrics-server |
+| IaC | Terraform |
+| CI/CD | GitHub Actions (build, testes, imagem GHCR, deploy) |
 
 ---
 
 ## Arquitetura
 
-O projeto adota **Package-by-Feature + DDD**. Cada pacote de feature é um Bounded Context independente com camadas internas:
+O projeto adota **Package-by-Feature + Clean Architecture**. Cada Bounded Context
+organiza-se nas camadas da Clean Architecture, com a **regra de dependência apontando
+sempre para dentro** — o núcleo (Entities, Use Cases) não conhece Spring nem JPA.
+A regra é validada automaticamente por testes **ArchUnit**
+(`br.com.oficina.architecture.ArchitectureTest`).
 
 ```
-br.com.oficina/
-├── cliente/         → domain / application / infrastructure / interfaces
-├── veiculo/         → domain / application / infrastructure / interfaces
-├── ordemservico/    → domain / application / infrastructure / interfaces
-├── servico/         → domain / application / infrastructure / interfaces
-├── peca/            → domain / application / infrastructure / interfaces
-├── auth/            → domain / application / infrastructure / interfaces
-└── shared/          → domínio compartilhado e configurações globais
+br.com.oficina.<contexto>/
+├── entities/        # Entidade de domínio + Value Objects — regra de negócio pura
+├── usecases/        # Um Use Case por operação; fala com Gateways via interface
+├── gateways/        # Ports (interfaces) — sem framework
+├── presenters/      # Monta o Response/ViewModel a partir da saída do Use Case
+├── controllers/     # Recebe DTO, chama Use Case, devolve via Presenter
+└── infrastructure/  # Frameworks & Drivers: JPA (*Data), *GatewayImpl, config, mappers
 ```
 
-**Regra de dependência:** `interfaces → application → domain`. O `domain` de cada feature não importa Spring, JPA ou outras features.
+**Fluxo (dependências apontam para dentro):**
+
+```
+Controller → Use Case → Entity → Use Case → Presenter → Controller
+                 ↓
+              Gateway (port) ← Gateway Impl (infra: JPA / e-mail / etc.)
+```
+
+> **Estado da migração:** os contextos `ordemservico` (núcleo) e `servico` (piloto) já
+> estão 100% na estrutura Clean Architecture. Os contextos de suporte restantes
+> (`cliente`, `veiculo`, `peca`, `auth`) seguem em `domain/application/interfaces` e estão
+> sendo migrados incrementalmente, cobertos pelo mesmo teste de arquitetura à medida que
+> avançam. Decisão registrada em [`docs/adr/0001-clean-architecture.md`](docs/adr/0001-clean-architecture.md).
 
 ---
 
@@ -93,6 +120,11 @@ docker compose up --build
 | `JWT_SECRET` | *(valor de dev)* | Chave secreta JWT (Base64, mín. 256 bits) |
 | `JWT_EXPIRATION_MS` | `86400000` | Expiração do token em ms (padrão: 24h) |
 | `SERVER_PORT` | `8080` | Porta do servidor |
+| `WEBHOOK_ORCAMENTO_TOKEN` | *(valor de dev)* | Token compartilhado que autentica o webhook de decisão de orçamento |
+| `NOTIFICACAO_EMAIL_ENABLED` | `false` | Habilita envio real de e-mail (produção). `false` = apenas log (dev/test) |
+| `NOTIFICACAO_EMAIL_REMETENTE` | `nao-responder@oficina.com` | Remetente dos e-mails de status |
+| `MAIL_HOST` / `MAIL_PORT` | `localhost` / `1025` | SMTP (Mailhog em dev; SendGrid/Gmail em produção) |
+| `MAIL_USERNAME` / `MAIL_PASSWORD` | *(vazio)* | Credenciais SMTP (produção) |
 
 ---
 
@@ -189,7 +221,8 @@ curl http://localhost:8080/api/clientes \
 | Método | Endpoint | Descrição |
 |---|---|---|
 | `POST` | `/api/ordens-servico` | Criar OS (vincula cliente e veículo) |
-| `GET` | `/api/ordens-servico` | Listar OSs (filtros por `clienteId`/`status`) |
+| `POST` | `/api/ordens-servico/abertura` | **Abertura consolidada**: cliente + veículo + serviços + peças numa única chamada; retorna o ID da OS |
+| `GET` | `/api/ordens-servico` | Listar OSs — **ordenadas por prioridade de status** (Em Execução > Aguardando Aprovação > Diagnóstico > Recebida), mais antigas primeiro; **exclui** FINALIZADA/ENTREGUE/CANCELADA. Filtros por `clienteId`/`status` |
 | `GET` | `/api/ordens-servico/{id}` | Buscar OS por ID |
 | `POST` | `/api/ordens-servico/{id}/servicos` | Adicionar item de serviço à OS |
 | `DELETE` | `/api/ordens-servico/{id}/servicos/{itemServicoId}` | Remover item de serviço |
@@ -204,6 +237,11 @@ curl http://localhost:8080/api/clientes \
 | Método | Endpoint | Descrição |
 |---|---|---|
 | `GET` | `/api/public/ordens-servico/{id}/status` | Consultar status da OS sem autenticação |
+
+### Webhook (integração externa)
+| Método | Endpoint | Descrição |
+|---|---|---|
+| `POST` | `/api/webhooks/orcamento` | Recebe a decisão de orçamento (`APROVADO`/`RECUSADO`) de um sistema externo. Autenticado pelo header `X-Webhook-Token`; idempotente. `APROVADO` → `EM_EXECUCAO`, `RECUSADO` → `CANCELADA` |
 
 ### Operacional
 | Método | Endpoint | Descrição |
@@ -229,6 +267,107 @@ O relatório de cobertura JaCoCo é gerado em: `target/site/jacoco/index.html`
 
 ---
 
+## Notificações por e-mail
+
+As transições relevantes da OS (`AGUARDANDO_APROVACAO`, `EM_EXECUCAO`, `FINALIZADA`,
+`ENTREGUE`, `CANCELADA`) disparam um e-mail ao cliente. A arquitetura mantém o port
+`NotificacaoGateway` no núcleo e dois adapters na infra, selecionados por
+`NOTIFICACAO_EMAIL_ENABLED`:
+
+- **`false` (dev/test):** `LogNotificacaoGateway` — apenas registra em log, sem envio real.
+- **`true` (produção/compose/k8s):** `EmailNotificacaoGateway` — envia via SMTP (`spring.mail.*`).
+
+Em desenvolvimento, o `docker compose` sobe um **Mailhog** (UI em `http://localhost:8025`)
+que captura os e-mails sem enviá-los de verdade. Falhas de envio são registradas e
+**não quebram** a transação de negócio.
+
+---
+
+## Deploy em Kubernetes (kind)
+
+Manifestos em [`/k8s`](k8s) (Deployment, Service NodePort, ConfigMap, Secret, HPA,
+PostgreSQL `StatefulSet`+`PVC`, Mailhog). Ver [`k8s/README.md`](k8s/README.md) para o
+passo a passo completo. Resumo:
+
+```bash
+# 1. cluster + metrics-server (ver k8s/README.md)
+kind create cluster --name oficina --config infra/kind-config.yaml
+# 2. imagem
+docker build -t oficina-api:latest oficina-api
+kind load docker-image oficina-api:latest --name oficina
+# 3. deploy
+kubectl apply -k k8s
+kubectl -n oficina rollout status deploy/oficina-api
+```
+
+- API: `http://localhost:30080/api/swagger-ui.html` · Mailhog: `http://localhost:30825`
+
+### Escalabilidade (HPA)
+
+O `HorizontalPodAutoscaler` escala a app de **2 a 6 réplicas** por CPU (60%) e memória (75%).
+Requer `metrics-server`. Para demonstrar:
+
+```bash
+kubectl get hpa,pods -n oficina -w        # observar
+./k8s/load-test.sh http://localhost:30080 60s 50   # gerar carga
+```
+
+---
+
+## Provisionamento com Terraform
+
+[`/infra`](infra) provisiona o cluster kind, o metrics-server e aplica os manifestos
+(app + banco) via Terraform. Ver [`infra/README.md`](infra/README.md).
+
+```bash
+docker build -t oficina-api:latest oficina-api   # imagem local
+cd infra
+terraform init
+terraform apply -auto-approve
+# ...
+terraform destroy -auto-approve                  # limpa tudo
+```
+
+---
+
+## CI/CD (GitHub Actions)
+
+| Workflow | Função |
+|---|---|
+| [`ci.yml`](.github/workflows/ci.yml) | Build + testes + JaCoCo + OWASP Dependency-Check (`mvn verify`) |
+| [`cd.yml`](.github/workflows/cd.yml) | Build da imagem Docker → push no **GHCR** → deploy no cluster (quando há credenciais) |
+| [`claude-review.yml`](.github/workflows/claude-review.yml) | Revisão automática de PRs |
+
+**Secrets do pipeline** (Settings → Secrets and variables → Actions):
+
+| Secret | Uso | Obrigatório |
+|---|---|---|
+| `GITHUB_TOKEN` | Push da imagem no GHCR (fornecido automaticamente) | — |
+| `KUBECONFIG_B64` | Kubeconfig do cluster (base64) para o job de deploy | Opcional* |
+
+\* Sem `KUBECONFIG_B64`, o job de deploy é **pulado com aviso** (não falha o pipeline) —
+a imagem é publicada normalmente no GHCR. Gere com:
+`base64 -w0 ~/.kube/config` e cole no secret.
+
+---
+
+## Vídeo demonstrativo
+
+> 🎥 **Link do vídeo:** _(a ser adicionado)_ — demonstra deploy da aplicação,
+> execução do CI/CD, consumo das APIs e escalabilidade automática (HPA sob carga).
+
+---
+
+## Coleção de APIs (Postman / Swagger)
+
+A especificação **OpenAPI** é a fonte da coleção e pode ser importada direto no
+Postman/Insomnia (*Import → Link*):
+
+- Swagger UI: `http://localhost:8080/api/swagger-ui.html`
+- OpenAPI JSON: `http://localhost:8080/api/v3/api-docs`
+
+---
+
 ## Justificativa do banco de dados
 
 **PostgreSQL** foi escolhido por:
@@ -244,6 +383,9 @@ O relatório de cobertura JaCoCo é gerado em: `target/site/jacoco/index.html`
 
 | Documento | Conteúdo |
 |---|---|
+| [`design-docs/tech-challenge-2/PLANEJAMENTO-FASE-2.md`](design-docs/tech-challenge-2/PLANEJAMENTO-FASE-2.md) | Planejamento e checklist da Fase 2 |
+| [`docs/adr/0001-clean-architecture.md`](docs/adr/0001-clean-architecture.md) | ADR — decisão de Clean Architecture |
+| [`k8s/README.md`](k8s/README.md) · [`infra/README.md`](infra/README.md) | Deploy em Kubernetes e provisionamento Terraform |
 | [`design-docs/PLANEJAMENTO.md`](design-docs/PLANEJAMENTO.md) | Visão geral da arquitetura e etapas de implementação |
 | [`design-docs/TESTES.md`](design-docs/TESTES.md) | Estratégia de testes e cobertura |
 | [`design-docs/vulnerabilidades.md`](design-docs/vulnerabilidades.md) | Relatório OWASP Dependency-Check (Etapa 8) |

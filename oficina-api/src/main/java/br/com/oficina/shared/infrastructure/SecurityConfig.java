@@ -67,6 +67,8 @@ public class SecurityConfig {
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/public/**").permitAll()
+                        // Webhooks: autenticados por token compartilhado no próprio controller
+                        .requestMatchers("/webhooks/**").permitAll()
                         // Rotas protegidas (requer autenticação)
                         .anyRequest().authenticated()
                 )

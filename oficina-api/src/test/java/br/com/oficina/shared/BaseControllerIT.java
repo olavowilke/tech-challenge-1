@@ -1,7 +1,7 @@
 package br.com.oficina.shared;
 
-import br.com.oficina.auth.interfaces.AuthResponse;
-import br.com.oficina.auth.interfaces.LoginRequest;
+import br.com.oficina.auth.controllers.LoginRequest;
+import br.com.oficina.auth.presenters.AuthResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;

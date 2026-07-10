@@ -1,7 +1,7 @@
 package br.com.oficina.auth.infrastructure;
 
-import br.com.oficina.auth.domain.Usuario;
-import br.com.oficina.auth.domain.UsuarioRepository;
+import br.com.oficina.auth.entities.Usuario;
+import br.com.oficina.auth.gateways.UsuarioGateway;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -14,15 +14,15 @@ import java.util.List;
 @Service
 public class UserDetailsServiceImpl implements UserDetailsService {
 
-    private final UsuarioRepository usuarioRepository;
+    private final UsuarioGateway usuarioGateway;
 
-    public UserDetailsServiceImpl(UsuarioRepository usuarioRepository) {
-        this.usuarioRepository = usuarioRepository;
+    public UserDetailsServiceImpl(UsuarioGateway usuarioGateway) {
+        this.usuarioGateway = usuarioGateway;
     }
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        Usuario usuario = usuarioRepository.findByUsername(username)
+        Usuario usuario = usuarioGateway.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + username));
         return new User(
                 usuario.getUsername(),
