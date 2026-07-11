@@ -305,14 +305,14 @@
                                 <rule>
                                     <element>PACKAGE</element>
                                     <includes>
-                                        <include>br.com.oficina.ordemservico.domain.*</include>
-                                        <include>br.com.oficina.ordemservico.application.*</include>
-                                        <include>br.com.oficina.cliente.domain.*</include>
-                                        <include>br.com.oficina.cliente.application.*</include>
-                                        <include>br.com.oficina.peca.domain.*</include>
-                                        <include>br.com.oficina.peca.application.*</include>
-                                        <include>br.com.oficina.veiculo.domain.*</include>
-                                        <include>br.com.oficina.veiculo.application.*</include>
+                                        <include>br.com.oficina.ordemservico.entities*</include>
+                                        <include>br.com.oficina.ordemservico.usecases*</include>
+                                        <include>br.com.oficina.cliente.entities*</include>
+                                        <include>br.com.oficina.cliente.usecases*</include>
+                                        <include>br.com.oficina.peca.entities*</include>
+                                        <include>br.com.oficina.peca.usecases*</include>
+                                        <include>br.com.oficina.veiculo.entities*</include>
+                                        <include>br.com.oficina.veiculo.usecases*</include>
                                     </includes>
                                     <limits>
                                         <limit>

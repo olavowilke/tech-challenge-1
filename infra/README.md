@@ -8,7 +8,7 @@ Provisiona, do zero, o ambiente local da Oficina API em Kubernetes usando
 | Recurso Terraform | O que provisiona |
 |---|---|
 | `kind_cluster.oficina` | Cluster Kubernetes local (kind) com NodePorts 30080/30825 mapeados para o host |
-| `null_resource.metrics_server` | Instala o `metrics-server` (pré-requisito do HPA) |
+| `null_resource.metrics_server` | Instala o `metrics-server` (pré-requisito do HPA) e aplica o patch `--kubelet-insecure-tls` via `metrics-server-patch.json` |
 | `null_resource.load_image` | Carrega a imagem `oficina-api:latest` no cluster |
 | `null_resource.deploy_manifests` | Aplica os manifestos `/k8s` (banco StatefulSet, Mailhog, app, Service, HPA) via kustomize |
 
@@ -38,8 +38,24 @@ Ao final, os `outputs` mostram a URL da API e do Mailhog. Estado local
 
 Acompanhe o deploy:
 ```bash
-kubectl --context oficina -n oficina get pods,svc,hpa
+kubectl --context kind-oficina -n oficina get pods,svc,hpa
 ```
+
+### Windows: `tf.ps1`
+
+Quando o terminal é aberto a partir do Git Bash, o `PATH` herdado fica em formato
+POSIX (`/c/Windows/System32`) e o `local-exec` do Terraform falha com
+`exec: "cmd": executable file not found in %PATH%`. O wrapper **`tf.ps1`**
+reconstrói o `PATH` a partir do registro do Windows e repassa os argumentos ao
+Terraform:
+
+```powershell
+.\tf.ps1 init
+.\tf.ps1 apply
+.\tf.ps1 destroy
+```
+
+Em Linux/macOS use o `terraform` diretamente (os comandos acima).
 
 ## Como destruir
 
