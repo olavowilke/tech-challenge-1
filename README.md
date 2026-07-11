@@ -10,7 +10,6 @@ Back-end desenvolvido como Tech Challenge da pós-graduação FIAP PosTech.
 > consolidada de OS, listagem ordenada, webhook de aprovação de orçamento,
 > notificação por e-mail) e infraestrutura de **Docker → Kubernetes (kind) →
 > Terraform → CI/CD (GitHub Actions)** com **autoscaling (HPA)**.
-> Planejamento detalhado: [`design-docs/tech-challenge-2/PLANEJAMENTO-FASE-2.md`](design-docs/tech-challenge-2/PLANEJAMENTO-FASE-2.md).
 
 ---
 
@@ -61,11 +60,12 @@ Controller → Use Case → Entity → Use Case → Presenter → Controller
               Gateway (port) ← Gateway Impl (infra: JPA / e-mail / etc.)
 ```
 
-> **Estado da migração:** os contextos `ordemservico` (núcleo) e `servico` (piloto) já
-> estão 100% na estrutura Clean Architecture. Os contextos de suporte restantes
-> (`cliente`, `veiculo`, `peca`, `auth`) seguem em `domain/application/interfaces` e estão
-> sendo migrados incrementalmente, cobertos pelo mesmo teste de arquitetura à medida que
-> avançam. Decisão registrada em [`docs/adr/0001-clean-architecture.md`](docs/adr/0001-clean-architecture.md).
+> **Estado da migração:** os **6** bounded contexts — `ordemservico`, `servico`,
+> `cliente`, `veiculo`, `peca` e `auth` — já estão 100% na estrutura Clean Architecture
+> (`entities` / `usecases` / `gateways` / `presenters` / `controllers` / `infrastructure`).
+> No `auth`, o acoplamento ao Spring Security foi isolado por ports (`TokenGateway`,
+> `AutenticadorGateway`) para manter os Use Cases livres da camada de infraestrutura. A
+> regra de dependência é validada em todos eles pelo teste `ArchitectureTest`.
 
 ---
 
@@ -105,7 +105,7 @@ A API estará disponível em: `http://localhost:8080/api`
 docker compose up --build
 ```
 
-> O `settings.xml` na raiz do projeto sobrepõe configurações de mirror corporativo do Maven. Use-o sempre com o wrapper local.
+> O `settings.xml` na raiz do módulo `oficina-api` sobrepõe configurações de mirror corporativo do Maven. Use-o sempre com o wrapper local (por isso o `-s settings.xml` nos comandos acima).
 
 ---
 
@@ -334,9 +334,17 @@ terraform destroy -auto-approve                  # limpa tudo
 
 | Workflow | Função |
 |---|---|
-| [`ci.yml`](.github/workflows/ci.yml) | Build + testes + JaCoCo + OWASP Dependency-Check (`mvn verify`) |
+| [`ci.yml`](.github/workflows/ci.yml) | Build + testes (JUnit / Testcontainers / ArchUnit) + relatório JaCoCo via `mvn verify`, publicado como artifact. Dispara em push na `main` e em PRs |
 | [`cd.yml`](.github/workflows/cd.yml) | Build da imagem Docker → push no **GHCR** → deploy no cluster (quando há credenciais) |
 | [`claude-review.yml`](.github/workflows/claude-review.yml) | Revisão automática de PRs |
+
+> A análise de vulnerabilidades **OWASP Dependency-Check** está configurada no `pom.xml`
+> (`failBuildOnCVSS=9`), mas roda **sob demanda** — não faz parte do `mvn verify` do CI:
+> ```bash
+> ./mvnw -s settings.xml org.owasp:dependency-check-maven:check
+> ```
+> O relatório mais recente está versionado em
+> [`vulnerability-report/dependency-check-report.html`](vulnerability-report/dependency-check-report.html).
 
 **Secrets do pipeline** (Settings → Secrets and variables → Actions):
 
@@ -383,10 +391,7 @@ Postman/Insomnia (*Import → Link*):
 
 | Documento | Conteúdo |
 |---|---|
-| [`design-docs/tech-challenge-2/PLANEJAMENTO-FASE-2.md`](design-docs/tech-challenge-2/PLANEJAMENTO-FASE-2.md) | Planejamento e checklist da Fase 2 |
-| [`docs/adr/0001-clean-architecture.md`](docs/adr/0001-clean-architecture.md) | ADR — decisão de Clean Architecture |
-| [`k8s/README.md`](k8s/README.md) · [`infra/README.md`](infra/README.md) | Deploy em Kubernetes e provisionamento Terraform |
-| [`design-docs/PLANEJAMENTO.md`](design-docs/PLANEJAMENTO.md) | Visão geral da arquitetura e etapas de implementação |
-| [`design-docs/TESTES.md`](design-docs/TESTES.md) | Estratégia de testes e cobertura |
-| [`design-docs/vulnerabilidades.md`](design-docs/vulnerabilidades.md) | Relatório OWASP Dependency-Check (Etapa 8) |
+| [`k8s/README.md`](k8s/README.md) | Deploy em Kubernetes (kind): manifestos, cluster, HPA, autoscaling |
+| [`infra/README.md`](infra/README.md) | Provisionamento do ambiente via Terraform (kind + metrics-server + deploy) |
+| [`vulnerability-report/dependency-check-report.html`](vulnerability-report/dependency-check-report.html) | Relatório OWASP Dependency-Check gerado |
 | [Board Miro — Documentação DDD](https://miro.com/app/board/uXjVOXA0ID4=/) | Event Storming, Context Map, Agregados e Linguagem Ubíqua |
