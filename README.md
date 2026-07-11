@@ -140,7 +140,8 @@ Com a aplicação rodando, acesse:
 ## Autenticação
 
 Todas as rotas administrativas exigem **JWT** (`Authorization: Bearer <token>`). As exceções (públicas) são:
-`/auth/**`, `/public/**`, `/health`, `/actuator/health`, `/swagger-ui/**`, `/v3/api-docs/**`.
+`/auth/**`, `/public/**`, `/webhooks/**`, `/health`, `/actuator/**`, `/swagger-ui/**`, `/swagger-ui.html`, `/v3/api-docs/**`.
+O endpoint de webhook é público para o JWT, mas autenticado por um token compartilhado no header `X-Webhook-Token`.
 
 ### Usuário admin padrão
 
