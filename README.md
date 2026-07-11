@@ -360,10 +360,9 @@ a imagem é publicada normalmente no GHCR. Gere com:
 
 ---
 
-## Vídeo demonstrativo
+## Infraestrutura
 
-> 🎥 **Link do vídeo:** _(a ser adicionado)_ — demonstra deploy da aplicação,
-> execução do CI/CD, consumo das APIs e escalabilidade automática (HPA sob carga).
+![oficina-api-infra-diagram.jpg](infra/oficina-api-infra-diagram.jpg)
 
 ---
 
@@ -390,9 +389,9 @@ Postman/Insomnia (*Import → Link*):
 
 ## Documentação complementar
 
-| Documento | Conteúdo |
-|---|---|
-| [`k8s/README.md`](k8s/README.md) | Deploy em Kubernetes (kind): manifestos, cluster, HPA, autoscaling |
-| [`infra/README.md`](infra/README.md) | Provisionamento do ambiente via Terraform (kind + metrics-server + deploy) |
-| [`vulnerability-report/dependency-check-report.html`](vulnerability-report/dependency-check-report.html) | Relatório OWASP Dependency-Check gerado |
-| [Board Miro — Documentação DDD](https://miro.com/app/board/uXjVOXA0ID4=/) | Event Storming, Context Map, Agregados e Linguagem Ubíqua |
+| Documento                                                                                                | Conteúdo                                                                   |
+|----------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------|
+| [`k8s/README.md`](k8s/README.md)                                                                         | Deploy em Kubernetes (kind): manifestos, cluster, HPA, autoscaling         |
+| [`infra/README.md`](infra/README.md)                                                                     | Provisionamento do ambiente via Terraform (kind + metrics-server + deploy) |
+| [`vulnerability-report/dependency-check-report.html`](vulnerability-report/dependency-check-report.html) | Relatório OWASP Dependency-Check gerado                                    |
+| [Board Miro - Diagramas](https://miro.com/app/board/uXjVOXA0ID4=/)                                       | Diagramas DDD + infra                                                      |
