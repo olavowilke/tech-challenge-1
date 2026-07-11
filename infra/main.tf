@@ -37,10 +37,14 @@ resource "null_resource" "metrics_server" {
   depends_on = [kind_cluster.oficina]
 
   provisioner "local-exec" {
-    command = <<-EOT
-      kubectl --context ${kind_cluster.oficina.name} apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
-      kubectl --context ${kind_cluster.oficina.name} -n kube-system patch deployment metrics-server --type='json' -p='[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--kubelet-insecure-tls"}]'
-    EOT
+    command = "kubectl --context kind-${kind_cluster.oficina.name} apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml"
+  }
+
+  # patch aplicado via --patch-file para evitar problemas de aspas do JSON no shell (cmd/PowerShell).
+  # Caminho sem aspas: o diretorio nao tem espacos e as aspas escapadas eram passadas
+  # literalmente pelo cmd /C, virando parte do nome do arquivo.
+  provisioner "local-exec" {
+    command = "kubectl --context kind-${kind_cluster.oficina.name} -n kube-system patch deployment metrics-server --type=json --patch-file ${abspath("${path.module}/metrics-server-patch.json")}"
   }
 }
 
@@ -69,6 +73,6 @@ resource "null_resource" "deploy_manifests" {
   }
 
   provisioner "local-exec" {
-    command = "kubectl --context ${kind_cluster.oficina.name} apply -k ${var.k8s_manifests_path}"
+    command = "kubectl --context kind-${kind_cluster.oficina.name} apply -k ${var.k8s_manifests_path}"
   }
 }
